@@ -1,0 +1,9 @@
+from chatbot import ComplianceBot
+
+bot = ComplianceBot()
+response = bot.ask(
+    question="Do I need to register for VAT in Poland if I sell less than €10,000?",
+    country_context="PL"
+)
+print(response["answer"])
+print(response["sources"])  # List of EU directive references
