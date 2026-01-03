@@ -1,0 +1,280 @@
+Adding New Regulations
+Place markdown files in regulations/ directory
+
+Follow the existing format with clear sections
+
+Include directive numbers, articles, and effective dates
+
+Run python knowledge_base.py --init to update vector store
+
+Test with sample questions
+
+Code Guidelines
+Follow PEP 8 for Python code
+
+Add type hints for function parameters and returns
+
+Write docstrings for all functions and classes
+
+Add unit tests for new functionality
+
+Keep commits focused and descriptive
+
+Testing
+bash
+# Run all tests
+pytest tests/ -v
+
+# Run specific test file
+pytest tests/test_chatbot.py -v
+
+# Run with coverage
+pytest --cov=chatbot tests/
+Pull Request Process
+Fork the repository
+
+Create a feature branch: git checkout -b feature/new-regulation
+
+Make your changes with descriptive commits
+
+Add/update tests as needed
+
+Update documentation (README, comments)
+
+Open a pull request with:
+
+Description of changes
+
+Related issue numbers
+
+Test results
+
+Screenshots for UI changes
+
+Legal & Ethical Guidelines
+Only use publicly available regulation texts
+
+Clearly cite all sources
+
+Include disclaimers about non-legal advice
+
+Do not include confidential or proprietary information
+
+Respect copyright and licensing requirements
+
+Questions?
+Open an issue for bugs or feature requests
+
+Email: joyprakash.tech@proton.me
+
+Join the discussion in Issues
+
+Thank you for helping make EU compliance more accessible to small businesses!
+
+
+---
+
+## **8. `tests/test_chatbot.py`**
+```python
+#!/usr/bin/env python3
+"""
+Unit tests for SME Compliance Bot.
+"""
+
+import unittest
+from unittest.mock import Mock, patch
+import sys
+import os
+
+# Add parent directory to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from chatbot import ComplianceBot, BotConfig
+
+class TestComplianceBot(unittest.TestCase):
+    
+    def setUp(self):
+        """Set up test fixtures."""
+        self.config = BotConfig(model_name="gpt-3.5-turbo")
+    
+    @patch('chatbot.OpenAIEmbeddings')
+    @patch('chatbot.ChatOpenAI')
+    @patch('chatbot.Chroma')
+    def test_bot_initialization(self, mock_chroma, mock_llm, mock_embeddings):
+        """Test bot initialization."""
+        # Mock dependencies
+        mock_embeddings.return_value = Mock()
+        mock_llm.return_value = Mock()
+        mock_chroma.return_value = Mock()
+        
+        # Initialize bot
+        bot = ComplianceBot(self.config)
+        
+        # Verify components were created
+        self.assertIsNotNone(bot.config)
+        self.assertIsNotNone(bot.conversation_history)
+        self.assertEqual(len(bot.conversation_history), 0)
+    
+    def test_parse_answer_sections(self):
+        """Test parsing of answer sections."""
+        bot = ComplianceBot(self.config)
+        
+        # Test answer with sections
+        test_answer = """**Answer:** This is the answer.
+**Applicable Directives:** Directive 2006/112/EC
+**Next Steps:** Consult a tax advisor.
+**Disclaimer:** This is not legal advice."""
+        
+        sections = bot._parse_answer_sections(test_answer)
+        
+        self.assertEqual(sections["Answer"], "This is the answer.")
+        self.assertEqual(sections["Applicable Directives"], "Directive 2006/112/EC")
+        self.assertEqual(sections["Next Steps"], "Consult a tax advisor.")
+        self.assertEqual(sections["Disclaimer"], "This is not legal advice.")
+    
+    def test_parse_answer_no_sections(self):
+        """Test parsing of answer without sections."""
+        bot = ComplianceBot(self.config)
+        
+        test_answer = "This is a simple answer without sections."
+        sections = bot._parse_answer_sections(test_answer)
+        
+        self.assertEqual(sections["Answer"], "")
+        self.assertEqual(sections["Applicable Directives"], "")
+    
+    @patch.object(ComplianceBot, 'ask')
+    def test_conversation_history(self, mock_ask):
+        """Test conversation history tracking."""
+        bot = ComplianceBot(self.config)
+        
+        # Mock response
+        mock_response = {
+            "question": "Test question",
+            "answer": "Test answer",
+            "sections": {"Answer": "Test answer"},
+            "sources": [],
+            "metadata": {"timestamp": "2024-01-01T00:00:00"}
+        }
+        mock_ask.return_value = mock_response
+        
+        # Ask a question
+        response = bot.ask("Test question")
+        
+        # Check history
+        history = bot.get_conversation_history()
+        self.assertEqual(len(history), 1)
+        self.assertEqual(history[0]["question"], "Test question")
+        self.assertTrue("answer_summary" in history[0])
+    
+    def test_clear_history(self):
+        """Test clearing conversation history."""
+        bot = ComplianceBot(self.config)
+        
+        # Add some history
+        bot.conversation_history = [
+            {"question": "Q1", "answer": "A1"},
+            {"question": "Q2", "answer": "A2"}
+        ]
+        
+        # Clear history
+        bot.clear_history()
+        
+        self.assertEqual(len(bot.conversation_history), 0)
+    
+    def test_config_validation(self):
+        """Test bot configuration validation."""
+        config = BotConfig(
+            model_name="gpt-4",
+            temperature=0.0,
+            max_tokens=500,
+            k_retrieval=3
+        )
+        
+        self.assertEqual(config.model_name, "gpt-4")
+        self.assertEqual(config.temperature, 0.0)
+        self.assertEqual(config.max_tokens, 500)
+        self.assertEqual(config.k_retrieval, 3)
+
+class TestBotConfig(unittest.TestCase):
+    
+    def test_default_config(self):
+        """Test default configuration values."""
+        config = BotConfig()
+        
+        self.assertEqual(config.model_name, "gpt-4-turbo-preview")
+        self.assertEqual(config.temperature, 0.1)
+        self.assertEqual(config.max_tokens, 1000)
+        self.assertEqual(config.k_retrieval, 5)
+        self.assertEqual(config.persist_directory, "./chroma_db")
+        self.assertEqual(config.use_streaming, False)
+    
+    def test_custom_config(self):
+        """Test custom configuration values."""
+        config = BotConfig(
+            model_name="custom-model",
+            temperature=0.5,
+            max_tokens=2000,
+            k_retrieval=10,
+            persist_directory="/custom/path",
+            use_streaming=True
+        )
+        
+        self.assertEqual(config.model_name, "custom-model")
+        self.assertEqual(config.temperature, 0.5)
+        self.assertEqual(config.max_tokens, 2000)
+        self.assertEqual(config.k_retrieval, 10)
+        self.assertEqual(config.persist_directory, "/custom/path")
+        self.assertEqual(config.use_streaming, True)
+
+if __name__ == "__main__":
+    unittest.main()
+
+execution summary:
+
+RY
+You now possess a complete third repository: sme-compliance-bot. This repository includes:
+
+Core Components:
+chatbot.py - Sophisticated RAG-based AI agent with conversation memory
+
+knowledge_base.py - Vector database management for EU regulations
+
+app.py - Professional Streamlit web interface
+
+regulations/ - Sample EU regulation documents (GDPR, VAT, etc.)
+
+Production Features:
+Retrieval-Augmented Generation (RAG) pipeline
+
+Citation tracking with EU directive references
+
+Multi-format support (web, API, CLI)
+
+Conversation history
+
+Vector database persistence
+
+Comprehensive testing suite
+
+Docker containerization
+
+CI/CD pipeline
+
+Professional Elements:
+MIT License
+
+Contributing guidelines
+
+Complete documentation
+
+Example regulation documents
+
+Unit tests
+
+Deployment configurations
+
+To Deploy:
+
+Create new GitHub repository named sme-compliance-bot
+
+
