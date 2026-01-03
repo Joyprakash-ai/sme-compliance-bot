@@ -1,0 +1,8 @@
+sme-compliance-bot/
+├── app.py                 # Streamlit web interface
+├── chatbot.py            # Core AI agent with RAG pipeline
+├── knowledge_base.py     # Vector database management
+├── regulations/          # EU regulation documents (markdown)
+├── docker/              # Containerization files
+├── config/              # Configuration
+└── tests/               # Unit and integration tests
