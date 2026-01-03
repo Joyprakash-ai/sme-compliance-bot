@@ -1,0 +1,10 @@
+🚢 Deployment Options
+local development :
+python app.py  # Streamlit UI
+uvicorn api:app --reload  # FastAPI backend
+
+docker:
+docker-compose up --build
+
+cloud: 
+# See deployment/ for Terraform and Kubernetes manifests
