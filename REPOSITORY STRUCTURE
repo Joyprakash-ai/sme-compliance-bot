@@ -1,0 +1,23 @@
+sme-compliance-bot/
+├── app.py
+├── chatbot.py
+├── knowledge_base.py
+├── regulations/
+│   ├── gdpr_summary.md
+│   ├── vat_directive.md
+│   └── eu_tax_guide.md
+├── requirements.txt
+├── README.md
+├── CONTRIBUTING.md
+├── LICENSE
+├── tests/
+│   ├── test_chatbot.py
+│   └── test_knowledge.py
+├── docker/
+│   ├── Dockerfile
+│   └── docker-compose.yml
+├── config/
+│   └── settings.yaml
+└── .github/
+    └── workflows/
+        └── ci.yml
